@@ -187,7 +187,7 @@ void EnemySpawning(std::vector<Enemy>& enemies, float& spawnDelay, int& maxEnemy
 
 int main()
 {
-    
+    //TO DO: Make Each Level Unique
     int levelOne[TILE_COUNT][TILE_COUNT]
     {
         //col:0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19    row:
@@ -261,6 +261,11 @@ int main()
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
     };
     int tiles[TILE_COUNT][TILE_COUNT];
+    GameState gameState = PRE;
+
+    memcpy(tiles, levelOne, sizeof(levelOne));
+
+
 
     std::vector<Cell> waypoints = FloodFill({ 0, 12 }, tiles, WAYPOINT);
     size_t curr = 0;
@@ -279,7 +284,7 @@ int main()
     float shootCurrent = 0.0f;
     float shootTotal = 0.05f;
 
-    InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Tower Defense");
+    InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Tower Defense - By Josh And Jesse");
     SetTargetFPS(60);
 
     std::vector<Enemy> enemies;
