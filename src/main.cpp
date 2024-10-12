@@ -136,18 +136,18 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
     return result;
 }
 
-// TODO - Make an Enemy structure. Its data is up to you!
+
 struct Enemy {
     int health = 30;
     float speed = 200.0f;
     int pointValue = 1;
-    Vector2 position;
+    Vector2 position{};
     int currWayp = 0;
     int nextWayp = currWayp + 1;
     float radius = 20.0f;
     bool alive = true;
 };
-// TODO - Make a Turret structure. Its data is up to you!
+
 struct Turret {
     int damage = 10;
     int cost = 10;
@@ -161,6 +161,7 @@ struct Turret {
 
 struct PlayerInfo { // a bit useless to start but may have some use down the road
     int coins = 50;
+    int health = 50;
 };
 
 
@@ -179,6 +180,199 @@ void EnemySpawning(std::vector<Enemy>& enemies, float& spawnDelay, int& maxEnemy
     enemy.position = enemyPosition;
     enemies.push_back(enemy);
     maxEnemyCount -= 1;
+}
+
+
+
+
+void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turrets) { //hehe
+    for (int row = 0; row < TILE_COUNT; row++) {
+        for (int col = 0; col < TILE_COUNT; col++) {
+            if (tiles[row][col] == TURRET) {
+                Turret turret;
+
+                turret.location = TileCenter(row, col);
+
+                turrets.push_back(turret);
+            }
+        }
+    }
+}
+
+
+
+
+//GameState Functions for StateMachine
+//Pregame = pre game state. Should Use RAYGUI for a level selector, maybe take player name if we're feelign scandalousse
+//Should switch state to GameLoop based on level select
+void PreGame(GameState& gameState) {
+    //empty fer now
+
+    BeginDrawing();
+    ClearBackground(LIGHTGRAY);
+    DrawText("Hi Josh! Welcome to our game.", 0, 0,50, RED);
+    DrawText("Hit Space to start lol", 0, 100,50, RED);
+    EndDrawing();
+
+
+}
+
+
+//Main game. Will take a lot of variables....
+//should auto advance through levels as well
+void GameLoop(float& spawnDelay, int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, float bulletSpeed, float bulletTime,float bulletRadius,int tiles[TILE_COUNT][TILE_COUNT], int levelOne[TILE_COUNT][TILE_COUNT], int levelTwo[TILE_COUNT][TILE_COUNT], int levelThree[TILE_COUNT][TILE_COUNT], float enemyRadius, std::vector<Cell>& waypoints, GameState& gameState ) {
+    // TODO - Spawn 10 enemies
+    float dt = GetFrameTime();
+    spawnDelay += dt;
+
+    // spawns 10 but I bet you weren't expecting me to do it this way!
+    if (spawnDelay >= 1.0f && maxEnemyCount > 0) {
+        EnemySpawning(enemies, spawnDelay, maxEnemyCount, enemyPosition);
+    }
+
+    shootCurrent += dt;
+    if (shootCurrent >= shootTotal) {  // Change to inside loop
+        for (Turret& turret : turrets) {
+
+            // Check if target is out of range
+            //absolute bullshit way of doing this
+            //please dont fail me for not using find_if
+            if (turret.target && Distance(turret.target->position, turret.location) > turret.range) {
+                turret.target = nullptr;
+
+            }
+
+            // If no target, find one
+            if (!turret.target) {
+                for (Enemy& enemy : enemies) {
+                    if (Distance(enemy.position, turret.location) <= turret.range) {
+                        turret.target = &enemy;
+                        break;
+                    }
+                }
+            }
+
+            // Shoot at the current target
+            //still maintains part of your code, yeah?
+            if (turret.target) {
+                Bullet bullet;
+                bullet.position = turret.location;
+                bullet.direction = Normalize(turret.target->position - bullet.position);
+                bullets.push_back(bullet);
+
+            }
+
+            // Reset shooting timers
+            shootCurrent = 0.0f;
+            shootTotal = turret.rateOfFire;
+
+        }
+    }
+
+    // TODO - Loop through all bullets & enemies, handle collision & movement accordingly
+    for (Bullet& bullet : bullets) {
+
+        bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
+        bullet.time += dt;
+        bool collision = false;
+        bool expired = bullet.time >= bulletTime;
+        // bool collision = CheckCollisionCircles(enemyPosition, enemyRadius, bullet.position, bulletRadius); //largely useless but keeping for reference
+
+        for (Enemy& enemy : enemies) {
+
+            collision = CheckCollisionCircles(enemy.position, enemy.radius, bullet.position, bulletRadius);
+            if (collision) {
+                std::cout << "coll";
+
+                enemy.health -= 10;
+                if (enemy.health <= 0) {
+                    enemy.alive = false;
+                }
+                bullet.enabled = false;
+                break;
+            }
+
+        }
+        bullet.enabled = !expired && !collision;
+    }
+
+    //Targeting system enemy removal handling???
+    for (Turret& turret : turrets) {
+        for (Enemy& enemy : enemies) {
+            if (!enemy.alive) {
+                turret.target = nullptr;
+            }
+        }
+    }
+
+
+
+
+    // Bullet removal
+    bullets.erase(std::remove_if(bullets.begin(), bullets.end(),
+        [](Bullet bullet) {
+            return !bullet.enabled;
+        }), bullets.end());
+
+    BeginDrawing();
+    ClearBackground(BLACK);
+
+
+    for (int row = 0; row < TILE_COUNT; row++) {
+        for (int col = 0; col < TILE_COUNT; col++) {
+            DrawTile(row, col, tiles[row][col]);
+        }
+    }
+
+    // moved pathfinding to here
+    for (Enemy& enemy : enemies) {
+        bool atEnd = enemy.nextWayp >= waypoints.size();
+        if (!atEnd) {
+            Vector2 from = TileCenter(waypoints[enemy.currWayp].row, waypoints[enemy.currWayp].col);
+            Vector2 to = TileCenter(waypoints[enemy.nextWayp].row, waypoints[enemy.nextWayp].col);
+            Vector2 direction = Normalize(to - from);
+            enemy.position = enemy.position + direction * enemy.speed * dt;
+
+            if (CheckCollisionPointCircle(enemy.position, to, enemyRadius)) {
+                enemy.currWayp++;
+                enemy.nextWayp++;
+                atEnd = enemy.nextWayp == waypoints.size();
+                enemy.position = TileCenter(waypoints[enemy.currWayp].row, waypoints[enemy.currWayp].col);
+                if (enemy.nextWayp >= waypoints.size())
+                    enemy.alive = false;
+            }
+        }
+    }
+
+    // Erase dead enemies
+    enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](Enemy& enemy) {
+        return !enemy.alive || enemy.health <= 0;
+        }), enemies.end());
+
+    // Render bullets
+    for (const Bullet& bullet : bullets)
+        DrawCircleV(bullet.position, bulletRadius, BLUE);
+
+    DrawText(TextFormat("Total bullets: %i", bullets.size()), 10, 10, 20, BLUE);
+
+    // Render enemies
+    for (const Enemy& enemy : enemies) {
+        if (enemy.alive)
+            DrawCircleV(enemy.position, enemy.radius, RED);
+    }
+
+    // Render turrets
+    for (const Turret& turret : turrets) {
+        DrawPoly(turret.location, 3, enemyRadius / 2, 1.0f, BLACK);
+    }
+
+
+    EndDrawing();
+}
+
+//After game is over. Maybe when All levels are done or player health <= 0 it goes back to Level select, or maybe it quickly goes to an info screen and gives option to choose new level.
+void PostGame() {
+
 }
 
 
@@ -220,16 +414,16 @@ int main()
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 2
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 3
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 4
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 6
-            { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 4, 0, 0, 0, 0, 0 }, // 7
+            { 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 5
+            { 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // 6
+            { 0, 4, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 4, 0, 0, 0, 0, 0 }, // 7
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 8
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 9
             { 0, 4, 0, 1, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 10
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 11
             { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // 12
             { 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 13
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 14
+            { 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 14
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 4, 0 }, // 15
             { 0, 0, 0, 4, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // 16
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0 }, // 17
@@ -261,9 +455,11 @@ int main()
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
     };
     int tiles[TILE_COUNT][TILE_COUNT];
+
+    //set initial gamestate to pregame
     GameState gameState = PRE;
 
-    memcpy(tiles, levelOne, sizeof(levelOne));
+    memcpy(tiles, levelOne, sizeof(levelOne)); //function that copies a grid into tiles. Use it for level swapping!
 
 
 
@@ -304,155 +500,35 @@ int main()
 
     float spawnDelay = 0.0f;
     int maxEnemyCount = 10;
-
+    bool canModify = false;
     while (!WindowShouldClose())
     {
-        // TODO - Spawn 10 enemies
-        float dt = GetFrameTime();
-        spawnDelay += dt;
+        switch (gameState) {
+            case PRE:
+                canModify = false;
+                PreGame(gameState);
+                break;
+            case GAMELOOP:
+                canModify = true;
+                GameLoop(spawnDelay, maxEnemyCount, enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletSpeed, bulletTime, bulletRadius, tiles, levelOne, levelTwo, levelThree,enemyRadius, waypoints, gameState );
+                break;
+            case END:
+                canModify = false;
+                break;
+            default:
+                gameState = PRE; // safety net
+                break;
 
-        // spawns 10 but I bet you weren't expecting me to do it this way!
-        if (spawnDelay >= 1.0f && maxEnemyCount > 0) {
-            EnemySpawning(enemies, spawnDelay, maxEnemyCount, enemyPosition);
         }
 
-        shootCurrent += dt;
-        if (shootCurrent >= shootTotal) {  // Change to inside loop
-            for (Turret& turret : turrets) {
-
-                // Check if target is out of range
-                //absolute bullshit way of doing this
-                //please dont fail me for not using find_if
-                if (turret.target && Distance(turret.target->position, turret.location) > turret.range) {
-                    turret.target = nullptr;
-
-                }
-
-                // If no target, find one
-                if (!turret.target) {
-                    for (Enemy& enemy : enemies) {
-                        if (Distance(enemy.position, turret.location) <= turret.range) {
-                            turret.target = &enemy;
-                            break;
-                        }
-                    }
-                }
-
-                // Shoot at the current target
-                //still maintains part of your code, yeah?
-                if (turret.target) {
-                    Bullet bullet;
-                    bullet.position = turret.location;
-                    bullet.direction = Normalize(turret.target->position - bullet.position);
-                    bullets.push_back(bullet);
-
-                }
-
-                // Reset shooting timers
-                shootCurrent = 0.0f;
-                shootTotal = turret.rateOfFire;
-
-            }
+            //test memcpy by removing from comments
+          /*  if (IsKeyPressed(KEY_SPACE) && canModify) {
+                memcpy(tiles, levelTwo, sizeof(levelTwo));
+                ReDrawTurrets(tiles, turrets);
+            }*/
+        if (IsKeyPressed(KEY_SPACE) && gameState == PRE) {
+            gameState = GAMELOOP;
         }
-
-        // TODO - Loop through all bullets & enemies, handle collision & movement accordingly
-        for (Bullet& bullet : bullets) {
-
-            bullet.position = bullet.position + bullet.direction * bulletSpeed * dt;
-            bullet.time += dt;
-            bool collision = false;
-            bool expired = bullet.time >= bulletTime;
-            // bool collision = CheckCollisionCircles(enemyPosition, enemyRadius, bullet.position, bulletRadius); //largely useless but keeping for reference
-
-            for (Enemy& enemy : enemies) {
-
-                collision = CheckCollisionCircles(enemy.position, enemy.radius, bullet.position, bulletRadius);
-                if (collision) {
-                    std::cout << "coll";
-
-                    enemy.health -= 10;
-                    if (enemy.health <= 0) {
-                        enemy.alive = false;
-                    }
-                    bullet.enabled = false;
-                    break;
-                }
-
-            }
-            bullet.enabled = !expired && !collision;
-        }
-
-        //Targeting system enemy removal handling???
-        for (Turret& turret : turrets) {
-            for (Enemy& enemy : enemies) {
-                if (!enemy.alive) {
-                    turret.target = nullptr;
-                }
-            }
-        }
-
-
-
-
-        // Bullet removal
-        bullets.erase(std::remove_if(bullets.begin(), bullets.end(),
-            [](Bullet bullet) {
-                return !bullet.enabled;
-            }), bullets.end());
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-
-
-        for (int row = 0; row < TILE_COUNT; row++) {
-            for (int col = 0; col < TILE_COUNT; col++) {
-                DrawTile(row, col, tiles[row][col]);
-            }
-        }
-
-        // moved pathfinding to here
-        for (Enemy& enemy : enemies) {
-            bool atEnd = enemy.nextWayp >= waypoints.size();
-            if (!atEnd) {
-                Vector2 from = TileCenter(waypoints[enemy.currWayp].row, waypoints[enemy.currWayp].col);
-                Vector2 to = TileCenter(waypoints[enemy.nextWayp].row, waypoints[enemy.nextWayp].col);
-                Vector2 direction = Normalize(to - from);
-                enemy.position = enemy.position + direction * enemy.speed * dt;
-
-                if (CheckCollisionPointCircle(enemy.position, to, enemyRadius)) {
-                    enemy.currWayp++;
-                    enemy.nextWayp++;
-                    atEnd = enemy.nextWayp == waypoints.size();
-                    enemy.position = TileCenter(waypoints[enemy.currWayp].row, waypoints[enemy.currWayp].col);
-                    if (enemy.nextWayp >= waypoints.size())
-                        enemy.alive = false;
-                }
-            }
-        }
-
-        // Erase dead enemies
-        enemies.erase(std::remove_if(enemies.begin(), enemies.end(), [](Enemy& enemy) {
-            return !enemy.alive || enemy.health <= 0;
-            }), enemies.end());
-
-        // Render bullets
-        for (const Bullet& bullet : bullets)
-            DrawCircleV(bullet.position, bulletRadius, BLUE);
-
-        DrawText(TextFormat("Total bullets: %i", bullets.size()), 10, 10, 20, BLUE);
-
-        // Render enemies
-        for (const Enemy& enemy : enemies) {
-            if (enemy.alive)
-                DrawCircleV(enemy.position, enemy.radius, RED);
-        }
-
-        // Render turrets
-        for (const Turret& turret : turrets) {
-            DrawPoly(turret.location, 3, enemyRadius / 2, 1.0f, BLACK);
-        }
-
-        EndDrawing();
     }
     // can store pointers to texture, 8 byte address per enemy
     CloseWindow();
