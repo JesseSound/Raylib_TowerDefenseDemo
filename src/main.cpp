@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raygui.h>
 #include "Math.h"
 
 #include <cassert>
@@ -134,11 +135,17 @@ struct Enemy {
 // TODO - Make a Turret structure. Its data is up to you!
 struct Turret {
     int damage = 10;
+    int cost = 10;
     float range = 250.0f;
     float rateOfFire = 0.6f;
     TurretType type = BASIC;
-    Vector2 location;
+    Vector2 location{};
     Enemy* target = nullptr;
+};
+
+
+struct PlayerInfo { // a bit useless to start but may have some use down the road
+    int coins = 50;
 };
 
 
