@@ -319,6 +319,9 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     float dt = GetFrameTime();
     spawnDelay += dt;
 
+    Sound damage = LoadSound("src/tick.mp3"); //https://pixabay.com/sound-effects/retro-hurt-2-236675/
+    Sound death = LoadSound("src/damage.mp3"); //https://pixabay.com/sound-effects/hurt-c-08-102842/
+    Sound shot = LoadSound("src/turretShot.mp3"); //https://pixabay.com/sound-effects/086409-retro-gun-shot-81545/
 
     
     CallSpawnLogic(enemyPosition, enemies, levelInfo);
@@ -353,6 +356,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
                 bullet.position = turret.location;
                 bullet.direction = Normalize(turret.target->position - bullet.position);
                 bullets.push_back(bullet);
+                PlaySound(shot);
 
             }
 
@@ -380,7 +384,11 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
 
                 enemy.health -= 10;
                 if (enemy.health <= 0) {
+                    PlaySound(death);
                     enemy.alive = false;
+                }
+                else {
+                    PlaySound(damage);
                 }
                 bullet.enabled = false;
                 break;
@@ -460,7 +468,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
         DrawPoly(turret.location, 3, 13.0f, 1.0f, BLACK);
     }
 
-
+    
     EndDrawing();
 }
 
@@ -475,7 +483,7 @@ void PostGame() {
 
 int main()
 {
-   
+    InitAudioDevice();
     //set initial gamestate to pregame
     GameState gameState = PRE;
 
@@ -557,6 +565,7 @@ int main()
         }
     }
     // can store pointers to texture, 8 byte address per enemy
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }
