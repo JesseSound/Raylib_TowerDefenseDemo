@@ -115,6 +115,13 @@ enum Level : int {
     TWO,
     THREE
 };
+//level information structure before i cry
+
+struct LevelInfo {
+
+    Level currentLevel = ONE;
+    int maxEnemyCount = (currentLevel +1) * 10; //fucking lol 
+};
 
 
 //just need a global variable for the spawndelay that we can alter
@@ -255,13 +262,13 @@ struct Bullet
      float bulletRadius = 15.0f;
 };
 
-void EnemySpawning(std::vector<Enemy>& enemies, float& spawnDelay, int& maxEnemyCount, Vector2& enemyPosition) {
+void EnemySpawning(std::vector<Enemy>& enemies, float& spawnDelay, Vector2& enemyPosition, LevelInfo& levelInfo) {
 
     spawnDelay = 0.0f;
     Enemy enemy;
     enemy.position = enemyPosition;
     enemies.push_back(enemy);
-    maxEnemyCount -= 1;
+    levelInfo.maxEnemyCount -= 1;
 }
 
 
@@ -281,9 +288,10 @@ void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turre
     }
 }
 
-void CallSpawnLogic(int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies) {
-    if (spawnDelay >= 1.0f && maxEnemyCount > 0) {
-        EnemySpawning(enemies, spawnDelay, maxEnemyCount, enemyPosition);
+void CallSpawnLogic(Vector2& enemyPosition, std::vector<Enemy>& enemies, LevelInfo& levelInfo) {
+    
+    if (spawnDelay >= 1.0f && levelInfo.maxEnemyCount > 0) {
+        EnemySpawning(enemies, spawnDelay, enemyPosition, levelInfo);
     }
 }
 
@@ -306,16 +314,16 @@ void PreGame(GameState& gameState) {
 
 //Main game. Will take a lot of variables....
 //should auto advance through levels as well
-void GameLoop( int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState ) {
+void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState, LevelInfo& levelInfo ) {
     // TODO - Spawn 10 enemies
     float dt = GetFrameTime();
     spawnDelay += dt;
 
 
     
-    CallSpawnLogic(maxEnemyCount, enemyPosition, enemies);
+    CallSpawnLogic(enemyPosition, enemies, levelInfo);
     
-
+    //clean this up
     shootCurrent += dt;
     if (shootCurrent >= shootTotal) {  // Change to inside loop
         for (Turret& turret : turrets) {
@@ -508,11 +516,19 @@ int main()
         }
     }
 
+    //Precursor to level select logic 
     
-    int maxEnemyCount = 10;
+    LevelInfo levelInfo{};
+   
+
     bool canModify = false;
+
+
     while (!WindowShouldClose())
     {
+       
+       
+
         switch (gameState) {
             case PRE:
                 canModify = false;
@@ -520,7 +536,7 @@ int main()
                 break;
             case GAMELOOP:
                 canModify = true;
-                GameLoop( maxEnemyCount, enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState );
+                GameLoop(enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState, levelInfo );
                 break;
             case END:
                 canModify = false;
