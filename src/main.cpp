@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <iostream>
 const float SCREEN_SIZE = 800;
-
 const int TILE_COUNT = 20;
 const float TILE_SIZE = SCREEN_SIZE / TILE_COUNT;
 
@@ -88,7 +87,7 @@ int levelThree[TILE_COUNT][TILE_COUNT]
         { 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // 19
 };
 int tiles[TILE_COUNT][TILE_COUNT];
-
+                                                                           
 enum TileType : int
 {
     GRASS,      // Marks unoccupied space, can be overwritten 
@@ -118,6 +117,8 @@ enum Level : int {
 };
 
 
+//just need a global variable for the spawndelay that we can alter
+float spawnDelay = 0.0f;
 
 // enum for gamestate for State Machine
 
@@ -126,7 +127,6 @@ enum GameState {
     GAMELOOP,
     END
 };
-
 
 
 
@@ -223,6 +223,7 @@ struct Enemy {
     int nextWayp = currWayp + 1;
     float radius = 20.0f;
     bool alive = true;
+    
 };
 
 struct Turret {
@@ -233,6 +234,7 @@ struct Turret {
     TurretType type = BASIC;
     Vector2 location{};
     Enemy* target = nullptr;
+    
 };
 
 
@@ -279,7 +281,11 @@ void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turre
     }
 }
 
-
+void CallSpawnLogic(int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies) {
+    if (spawnDelay >= 1.0f && maxEnemyCount > 0) {
+        EnemySpawning(enemies, spawnDelay, maxEnemyCount, enemyPosition);
+    }
+}
 
 
 //GameState Functions for StateMachine
@@ -300,15 +306,15 @@ void PreGame(GameState& gameState) {
 
 //Main game. Will take a lot of variables....
 //should auto advance through levels as well
-void GameLoop(float& spawnDelay, int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState ) {
+void GameLoop( int& maxEnemyCount, Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState ) {
     // TODO - Spawn 10 enemies
     float dt = GetFrameTime();
     spawnDelay += dt;
 
-    // spawns 10 but I bet you weren't expecting me to do it this way!
-    if (spawnDelay >= 1.0f && maxEnemyCount > 0) {
-        EnemySpawning(enemies, spawnDelay, maxEnemyCount, enemyPosition);
-    }
+
+    
+    CallSpawnLogic(maxEnemyCount, enemyPosition, enemies);
+    
 
     shootCurrent += dt;
     if (shootCurrent >= shootTotal) {  // Change to inside loop
@@ -502,7 +508,7 @@ int main()
         }
     }
 
-    float spawnDelay = 0.0f;
+    
     int maxEnemyCount = 10;
     bool canModify = false;
     while (!WindowShouldClose())
@@ -514,7 +520,7 @@ int main()
                 break;
             case GAMELOOP:
                 canModify = true;
-                GameLoop(spawnDelay, maxEnemyCount, enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState );
+                GameLoop( maxEnemyCount, enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState );
                 break;
             case END:
                 canModify = false;
