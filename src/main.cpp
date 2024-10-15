@@ -11,11 +11,14 @@ const float SCREEN_SIZE = 800;
 const int TILE_COUNT = 20;
 const float TILE_SIZE = SCREEN_SIZE / TILE_COUNT;
 
-//don't have to pass to functio this way
-//SOund list
+//don't have to pass to function this way
+//Sound list
 Sound damage{};
 Sound death{};
 Sound shot{};
+
+//textures
+Texture tower1{};
 
 //TO DO: Make Each Level Unique
 //These Levels are GLOBAL VARIABLES
@@ -114,7 +117,7 @@ void DrawTile(int row, int col, int type)
 {
     Color color;
     if (type == 4) {
-        color = GRAY;
+        color = DARKGREEN;
     }
     else {
         color = type < 1 ? GREEN : BEIGE;
@@ -421,7 +424,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
 
     // Render turrets
     for (const Turret& turret : turrets) {
-        DrawPoly(turret.location, 3, 13.0f, 1.0f, BLACK);
+        DrawTexture(tower1, turret.location.x -31, turret.location.y -30, WHITE);
     }
 
     
@@ -443,12 +446,14 @@ int main()
     SetTargetFPS(60);
     InitAudioDevice();
 
-    //assign audio
+    //assign audio and textures
     damage = LoadSound("src/tick.mp3"); //https://pixabay.com/sound-effects/retro-hurt-2-236675/
     death = LoadSound("src/damage.mp3"); //https://pixabay.com/sound-effects/hurt-c-08-102842/
     shot = LoadSound("src/turretShot.mp3"); //https://pixabay.com/sound-effects/086409-retro-gun-shot-81545/
    
-    
+    tower1 = LoadTexture("src/towerlvl1.png"); //https://opengameart.org/content/tower-defense
+
+
     //set initial gamestate to pregame
     GameState gameState = PRE;
 
