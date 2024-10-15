@@ -11,6 +11,11 @@ const float SCREEN_SIZE = 800;
 const int TILE_COUNT = 20;
 const float TILE_SIZE = SCREEN_SIZE / TILE_COUNT;
 
+//don't have to pass to functio this way
+//SOund list
+Sound damage{};
+Sound death{};
+Sound shot{};
 
 //TO DO: Make Each Level Unique
 //These Levels are GLOBAL VARIABLES
@@ -319,9 +324,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     float dt = GetFrameTime();
     spawnDelay += dt;
 
-    Sound damage = LoadSound("src/tick.mp3"); //https://pixabay.com/sound-effects/retro-hurt-2-236675/
-    Sound death = LoadSound("src/damage.mp3"); //https://pixabay.com/sound-effects/hurt-c-08-102842/
-    Sound shot = LoadSound("src/turretShot.mp3"); //https://pixabay.com/sound-effects/086409-retro-gun-shot-81545/
+    
 
     
     CallSpawnLogic(enemyPosition, enemies, levelInfo);
@@ -483,7 +486,14 @@ void PostGame() {
 
 int main()
 {
+    InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Tower Defense - By Josh And Jesse");
+    SetTargetFPS(60);
     InitAudioDevice();
+
+    //assign audio
+    damage = LoadSound("src/tick.mp3"); //https://pixabay.com/sound-effects/retro-hurt-2-236675/
+    death = LoadSound("src/damage.mp3"); //https://pixabay.com/sound-effects/hurt-c-08-102842/
+    shot = LoadSound("src/turretShot.mp3"); //https://pixabay.com/sound-effects/086409-retro-gun-shot-81545/
     //set initial gamestate to pregame
     GameState gameState = PRE;
 
@@ -506,8 +516,7 @@ int main()
     float shootCurrent = 0.0f;
     float shootTotal = 0.05f;
 
-    InitWindow(SCREEN_SIZE, SCREEN_SIZE, "Tower Defense - By Josh And Jesse");
-    SetTargetFPS(60);
+    
 
     std::vector<Enemy> enemies;
     std::vector<Turret> turrets;
