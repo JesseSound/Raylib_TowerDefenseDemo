@@ -182,7 +182,12 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
     return result;
 }
 
+enum EnemyType : int {
+    ENEMY,
+    ENEMIER,
+    ENEMIEST
 
+};
 struct Enemy {
     int health = 30;
     float speed = 200.0f;
