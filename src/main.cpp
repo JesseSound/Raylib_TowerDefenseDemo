@@ -65,7 +65,9 @@ struct Cell
 
 
 enum TurretType : int {
-    BASIC //add more later
+    BASIC, //add more later
+    UPGRADED,
+    MAXED
 };
 
 //enum for what level we're in
@@ -201,7 +203,10 @@ struct Turret {
     TurretType type = BASIC;
     Vector2 location{};
     Enemy* target = nullptr;
-    
+
+    //store the texture here
+
+    //run a function that swaps it based on level?
 };
 
 
@@ -424,6 +429,8 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
 
     // Render turrets
     for (const Turret& turret : turrets) {
+        //if turret level = 0,1,2
+        //Texture tower = 
         DrawTexture(tower1, turret.location.x -31, turret.location.y -30, WHITE);
     }
 
