@@ -405,7 +405,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     spawnDelay += dt;
 
     
-
+    
     
     CallSpawnLogic(enemyPosition, enemies, levelInfo);
     
@@ -570,7 +570,9 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     }
 
 
-
+    if (levelInfo.maxEnemyCount == 0 && enemies.size() == 0) {
+        gameState = SETUP;
+    }
     
     EndDrawing();
 }
@@ -619,17 +621,23 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
             case 0:
                 level.currentLevel = ONE;
                 levelInc += 1;
+                level.maxEnemyCount = 10;
                 gameState = GAMELOOP;
+                
                 break;
             case 1:
                 level.currentLevel = TWO;
                 levelInc += 1;
+                level.maxEnemyCount = 20;
                 gameState = GAMELOOP;
+                
                 break;
             case 2:
                 level.currentLevel = THREE;
                 levelInc += 1;
+                level.maxEnemyCount = 30;
                 gameState = GAMELOOP;
+
                 break;
             case 3:
                 gameState = END;
@@ -688,20 +696,6 @@ int main()
     std::vector<Enemy> enemies;
     std::vector<Turret> turrets;
 
-
-    //ReDrawTurrets(tiles, turrets);
-   /* for (int row = 0; row < TILE_COUNT; row++) {
-        for (int col = 0; col < TILE_COUNT; col++) {
-            if (tiles[row][col] == TURRET) {
-                Turret turret;
-
-                turret.location = TileCenter(row, col);
-
-                turrets.push_back(turret);
-            }
-        }
-    }*/
-
    
     //init with 0 level for testing
     
@@ -709,9 +703,6 @@ int main()
     levelInfo.currentLevel = ZERO;
     levelInfo.maxEnemyCount = (levelInfo.currentLevel + 1) * 10;
     
-
-
-
     //Init PlayerInfo
     PlayerInfo playerInfo{};
     Turret   turretCost{};
