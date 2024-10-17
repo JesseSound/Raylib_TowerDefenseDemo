@@ -262,7 +262,7 @@ struct Enemy {
     void typeInit() {
         switch (type) {
             case ENEMY:
-                health = 30;
+                health = 50;
                 speed = 200.0f;
                 pointValue = 5;
                 damage = 5;
@@ -270,7 +270,7 @@ struct Enemy {
                 texture = &gEnemyTexture1;
                 break;
             case ENEMIER:
-                health = 50;
+                health = 80;
                 speed = 220.0f;
                 pointValue = 10;
                 color = BLUE;
@@ -278,7 +278,7 @@ struct Enemy {
                 texture = &gEnemyTexture2;
                 break;
             case ENEMIEST:
-                health = 70;
+                health = 100;
                 speed = 250.0f;
                 pointValue = 20;
                 color = PURPLE;
@@ -308,7 +308,7 @@ enum TurretType : int {
 struct Turret {
     int damage = 10;
     int cost = 20;
-    int upGradeCost = 25;
+    int upgradeCost = 25;
     float range = 250.0f;
     float rateOfFire = 0.6f;
     TurretType type = BASIC;
@@ -594,7 +594,7 @@ void PostGame(PlayerInfo playerInfo) {
     EndDrawing();
 }
 
-void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInfo& level, std::vector<Turret>& turretArray)
+void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelInfo& level, std::vector<Turret>& turretArray)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -611,18 +611,36 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
       
         int tileX = (int)(pos.x/40);
         int tileY = (int)(pos.y/40);
-
+        std::cout << tiles[tileY][tileX];
         std::cout << "Tile X: " << tileX;
         std::cout << "Tile Y: " << tileY;
+       
         if (tiles[tileY][tileX] == GRASS && playerInfo.coins >= turret.cost) {
             tiles[tileY][tileX] = TURRET;
             playerInfo.coins -= turret.cost;
             ReDrawTurrets(tiles, turretArray);
-        }
-        else if (tiles[tileX][tileY] == TURRET && playerInfo.coins >= turret.upGradeCost) {
+         } else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
+             turret.damage *= 2;
+             turret.turretTexture = gEnemyTexture1;
+             std::cout << "UPGRADE";
+         }
+        
+    }
+    if (IsMouseButtonPressed(1)) {
+        Vector2 pos = GetMousePosition();
 
-        }
 
+        int tileX = (int)(pos.x / 40);
+        int tileY = (int)(pos.y / 40);
+        std::cout << tiles[tileY][tileX];
+        std::cout << "Tile X: " << tileX;
+        std::cout << "Tile Y: " << tileY;
+
+        if (tiles[tileY][tileX] == TURRET) {
+            tiles[tileY][tileX] = GRASS;
+            playerInfo.coins += turret.cost/2;
+            ReDrawTurrets(tiles, turretArray);
+        }
     }
     if (IsKeyPressed(KEY_A)) {
        
