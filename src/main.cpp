@@ -586,7 +586,34 @@ void PostGame(PlayerInfo playerInfo) {
     EndDrawing();
 }
 
+void Setup(PlayerInfo& playerInfo, Turret turret)
+{
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
 
+    for (int row = 0; row < TILE_COUNT; row++) {
+        for (int col = 0; col < TILE_COUNT; col++) {
+            DrawTile(row, col, tiles[row][col]);
+        }
+    }
+
+    if (IsMouseButtonPressed(0)) {
+        Vector2 pos = GetMousePosition();
+       
+      
+        int tileX = (int)(pos.x /= 40);
+        int tileY = (int)(pos.y /= 40);
+        if (tiles[tileX][tileY] == GRASS && playerInfo.coins > turret.cost) {
+            tiles[tileX][tileY] == TURRET;
+            
+        }
+        //else if (tiles[tileX][tileY] == TURRET && playerInfo.coins > turret.cost)
+
+    }
+
+
+    EndDrawing();
+}
 
 
 
@@ -646,8 +673,9 @@ int main()
    
     //init with first level for testing
     LevelInfo levelInfo{};
-    levelInfo.currentLevel = TWO;
+    levelInfo.currentLevel = THREE;
     levelInfo.maxEnemyCount = (levelInfo.currentLevel + 1) * 10;
+
 
 
 
@@ -677,6 +705,10 @@ int main()
             case END:
                 PostGame(playerInfo);
                 break;
+            case SETUP:
+                Setup(playerInfo);
+                break;
+
             default:
                 gameState = PRE; // safety net
                 break;
@@ -685,7 +717,7 @@ int main()
 
          
         if (IsKeyPressed(KEY_SPACE) && gameState == PRE) {
-            gameState = GAMELOOP;
+            gameState = SETUP;
         }
     }
     // can store pointers to texture, 8 byte address per enemy
