@@ -82,8 +82,8 @@ enum Level : int {
 
 struct LevelInfo {
 
-    Level currentLevel = ONE; //init to one for testing purposes
-    int maxEnemyCount = (currentLevel +1) * 10; //fucking lol 
+    Level currentLevel{}; 
+    int maxEnemyCount{}; 
 };
 
 
@@ -193,10 +193,10 @@ enum EnemyType : int {
 
 //crazy ass function to swap colors of a texture???? why do I do these things to myself
 
-Texture2D ChangeTextureColor(EnemyType enemyType, Texture2D enemyTexture) {
+Texture2D ChangeTextureColor(EnemyType enemyType, Texture2D enemyText) {
 
     //convert to image
-    Image textToImage = LoadImageFromTexture(enemyTexture);
+    Image textToImage = LoadImageFromTexture(enemyText);
     //store an array of the colors in the image
     Color* imageColors = LoadImageColors(textToImage);
 
@@ -232,7 +232,7 @@ Texture2D ChangeTextureColor(EnemyType enemyType, Texture2D enemyTexture) {
     //unload shit to free memory
     UnloadImage(textToImage);
     UnloadImageColors(imageColors);
-
+    //UnloadTexture(enemyText);
     //return our texture
     return newText;
 
@@ -546,13 +546,14 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     
     DrawText(TextFormat("Player Coins: %i", playerInfo.coins), 10, 10, 20, BLUE);
     DrawText(TextFormat("Player Health: %i", playerInfo.health), 10, 30, 20, RED);
+    DrawText(TextFormat("Remaining Enemies: %i", levelInfo.maxEnemyCount), 10, 60, 20, BLACK);
 
     // Render enemies
     for (const Enemy& enemy : enemies) {
 
         if (enemy.alive) {
             //Texture2D newTexture = ChangeTextureColor(enemy, enemyTexture); **don't uncomment
-            DrawCircleV(enemy.position, enemy.radius, enemy.color);
+            //DrawCircleV(enemy.position, enemy.radius, enemy.color);
             DrawTextureV(enemy.texture, { enemy.position.x - 15, enemy.position.y - 15 }, WHITE);
            
         }
@@ -645,8 +646,8 @@ int main()
    
     //init with first level for testing
     LevelInfo levelInfo{};
-    levelInfo.currentLevel = THREE;
-   
+    levelInfo.currentLevel = TWO;
+    levelInfo.maxEnemyCount = (levelInfo.currentLevel + 1) * 10;
 
 
 
@@ -688,6 +689,7 @@ int main()
         }
     }
     // can store pointers to texture, 8 byte address per enemy
+    UnloadTexture(enemyTexture);
     CloseAudioDevice();
     CloseWindow();
     return 0;
