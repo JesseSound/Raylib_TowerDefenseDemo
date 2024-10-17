@@ -20,8 +20,7 @@ Sound shot{};
 //textures
 Texture tower1{};
 
-//TO DO: Make Each Level Unique
-//These Levels are GLOBAL VARIABLES
+
 int tiles[TILE_COUNT][TILE_COUNT]
 {
     //col:0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19    row:
@@ -64,11 +63,7 @@ struct Cell
 };
 
 
-enum TurretType : int {
-    BASIC, //add more later
-    UPGRADED,
-    MAXED
-};
+
 
 //enum for what level we're in
 
@@ -94,7 +89,8 @@ float spawnDelay = 0.0f;
 enum GameState {
     PRE,
     GAMELOOP,
-    END
+    END,
+    SETUP
 };
 
 
@@ -189,17 +185,56 @@ enum EnemyType : int {
 
 };
 struct Enemy {
-    int health = 30;
-    float speed = 200.0f;
-    int pointValue = 1;
+    int health{};
+    float speed{};
+    int pointValue{};
     Vector2 position{};
     int currWayp = 0;
     int nextWayp = currWayp + 1;
     float radius = 20.0f;
     bool alive = true;
-    
-};
+    EnemyType type{};
+    Color color{};
+    //constructor to create unique enemies based on level
+    Enemy(const EnemyType& enemyType) :type(enemyType) {
+        typeInit();
+    }
 
+    void typeInit() {
+        switch (type) {
+            case ENEMY:
+                health = 30;
+                speed = 200.0f;
+                pointValue = 10;
+                color = RED;
+                break;
+            case ENEMIER:
+                health = 50;
+                speed = 220.0f;
+                pointValue = 15;
+                color = BLUE;
+                break;
+            case ENEMIEST:
+                health = 70;
+                speed = 250.0f;
+                pointValue = 30;
+                color = PURPLE;
+                break;
+            default:
+                health = 30;
+                speed = 200.0f;
+                pointValue = 10;
+                color = PURPLE;
+                break;
+        }
+
+    }
+};
+enum TurretType : int {
+    BASIC, //add more later
+    UPGRADED,
+    MAXED
+};
 struct Turret {
     int damage = 10;
     int cost = 10;
@@ -234,8 +269,22 @@ struct Bullet
 
 void EnemySpawning(std::vector<Enemy>& enemies, Vector2& enemyPosition, LevelInfo& levelInfo) {
 
-    
-    Enemy enemy;
+    EnemyType enemyType{};
+    switch (levelInfo.currentLevel) {
+        case ONE:
+            enemyType = ENEMY;
+            break;
+        case TWO:
+            enemyType = ENEMIER;
+            break;
+        case THREE:
+            enemyType = ENEMIEST;
+            break;
+        default:
+            enemyType = ENEMY;
+            break;
+    }
+    Enemy enemy(enemyType);
     enemy.position = enemyPosition;
     enemies.push_back(enemy);
     levelInfo.maxEnemyCount -= 1;
@@ -429,7 +478,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     // Render enemies
     for (const Enemy& enemy : enemies) {
         if (enemy.alive)
-            DrawCircleV(enemy.position, enemy.radius, RED);
+            DrawCircleV(enemy.position, enemy.radius, enemy.color);
     }
 
     // Render turrets
@@ -505,9 +554,10 @@ int main()
         }
     }
 
-    //Precursor to level select logic 
-    
+   
+    //init with first level for testing
     LevelInfo levelInfo{};
+    levelInfo.currentLevel = ONE;
    
 
     bool canModify = false;
