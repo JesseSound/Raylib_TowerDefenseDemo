@@ -19,6 +19,12 @@ Sound shot{};
 
 //textures
 Texture tower1{};
+Texture enemyTexture;
+
+
+
+
+
 
 
 int tiles[TILE_COUNT][TILE_COUNT]
@@ -184,8 +190,57 @@ enum EnemyType : int {
     ENEMIEST
 
 };
+
+//crazy ass function to swap colors of a texture???? why do I do these things to myself
+
+Texture2D ChangeTextureColor(EnemyType enemyType, Texture2D enemyTexture) {
+
+    //convert to image
+    Image textToImage = LoadImageFromTexture(enemyTexture);
+    //store an array of the colors in the image
+    Color* imageColors = LoadImageColors(textToImage);
+
+    //bit shift them to new colors
+    for (int i = 0; i < textToImage.width * textToImage.height; i++) {
+        Color color = imageColors[i];
+        Color newColor = color;
+
+        if (enemyType == ENEMY) {
+            newColor.r = (color.r >> 5);
+            newColor.g = (color.g << 5);
+            newColor.b = (color.b << 5);
+        }
+        else if (enemyType == ENEMIER) {
+            newColor.r = (color.r << 5);
+            newColor.g = (color.g >> 5);
+            newColor.b = (color.b << 5);
+        }
+        else if (enemyType == ENEMIEST) {
+            newColor.r = (color.r >> 5);
+            newColor.g = (color.g << 1);
+            newColor.b = (color.b >> 3);
+        }
+        // Replace color only if it's not the same to avoid doing too much again lol
+        if (color.r != newColor.r || color.g != newColor.g || color.b != newColor.b) {
+            ImageColorReplace(&textToImage, color, newColor);
+        }
+    }
+
+    //should be able to make a new texture based off the shit
+
+    Texture2D newText = LoadTextureFromImage(textToImage);
+    //unload shit to free memory
+    UnloadImage(textToImage);
+    UnloadImageColors(imageColors);
+
+    //return our texture
+    return newText;
+
+}
+
 struct Enemy {
     int health{};
+    int damage{};
     float speed{};
     int pointValue{};
     Vector2 position{};
@@ -195,6 +250,7 @@ struct Enemy {
     bool alive = true;
     EnemyType type{};
     Color color{};
+    Texture2D texture = enemyTexture;
     //constructor to create unique enemies based on level
     Enemy(const EnemyType& enemyType) :type(enemyType) {
         typeInit();
@@ -206,25 +262,33 @@ struct Enemy {
                 health = 30;
                 speed = 200.0f;
                 pointValue = 10;
+                damage = 5;
                 color = RED;
+                texture = ChangeTextureColor(type, enemyTexture);
                 break;
             case ENEMIER:
                 health = 50;
                 speed = 220.0f;
                 pointValue = 15;
                 color = BLUE;
+                damage = 10;
+                texture = ChangeTextureColor(type, enemyTexture);
                 break;
             case ENEMIEST:
                 health = 70;
                 speed = 250.0f;
                 pointValue = 30;
                 color = PURPLE;
+                damage = 20;
+                texture = ChangeTextureColor(type, enemyTexture);
                 break;
             default:
                 health = 30;
                 speed = 200.0f;
                 pointValue = 10;
                 color = PURPLE;
+                damage = 5;
+                texture = enemyTexture;
                 break;
         }
 
@@ -315,7 +379,6 @@ void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turre
 
 
 
-
 //GameState Functions for StateMachine
 //Pregame = pre game state. Should Use RAYGUI for a level selector, maybe take player name if we're feelign scandalousse
 //Should switch state to GameLoop based on level select
@@ -352,7 +415,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
             // Check if target is out of range
             //absolute bullshit way of doing this
             //please dont fail me for not using find_if
-            if (turret.target && Distance(turret.target->position, turret.location) > turret.range) {
+            if (turret.target && Distance(turret.target->position, turret.location) > turret.range || enemies.size() <=0) {
                 turret.target = nullptr;
 
             }
@@ -458,8 +521,10 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
                 enemy.nextWayp++;
                 atEnd = enemy.nextWayp == waypoints.size();
                 enemy.position = TileCenter(waypoints[enemy.currWayp].row, waypoints[enemy.currWayp].col);
-                if (enemy.nextWayp >= waypoints.size())
+                if (enemy.nextWayp >= waypoints.size()) {
                     enemy.alive = false;
+                    playerInfo.health -= enemy.damage;
+                }
             }
         }
     }
@@ -483,8 +548,13 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
 
     // Render enemies
     for (const Enemy& enemy : enemies) {
-        if (enemy.alive)
+
+        if (enemy.alive) {
+            //Texture2D newTexture = ChangeTextureColor(enemy, enemyTexture); **don't uncomment
             DrawCircleV(enemy.position, enemy.radius, enemy.color);
+            DrawTextureV(enemy.texture, { enemy.position.x - 15, enemy.position.y - 15 }, WHITE);
+           
+        }
     }
 
     // Render turrets
@@ -519,7 +589,7 @@ int main()
     shot = LoadSound("src/turretShot.mp3"); //https://pixabay.com/sound-effects/086409-retro-gun-shot-81545/
    
     tower1 = LoadTexture("src/towerlvl1.png"); //https://opengameart.org/content/tower-defense
-
+    enemyTexture = LoadTexture("src/enemyTexture.png"); //self made by Jesse
 
     //set initial gamestate to pregame
     GameState gameState = PRE;
@@ -563,7 +633,7 @@ int main()
    
     //init with first level for testing
     LevelInfo levelInfo{};
-    levelInfo.currentLevel = ONE;
+    levelInfo.currentLevel = THREE;
    
 
     bool canModify = false;
