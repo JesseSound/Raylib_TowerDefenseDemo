@@ -59,7 +59,7 @@ enum TileType : int
     DIRT,       // Marks the path, cannot be overwritten
     WAYPOINT,   // Marks where the path turns, cannot be overwritten
     COUNT,
-    TURRETS
+    TURRET
 };
 
 struct Cell
@@ -296,107 +296,23 @@ struct Enemy {
     }
 };
 enum TurretType : int {
-    TURRET, //add more later
+    BASIC, //add more later
     TURRETER,
     TURRETIEST
 };
 
-Texture2D ChangeTextureColor(TurretType turretType, Texture2D turretText) {
 
-    //convert to image
-    Image textToImage = LoadImageFromTexture(turretText);
-    //store an array of the colors in the image
-    Color* imageColors = LoadImageColors(textToImage);
-
-    //bit shift them to new colors
-    for (int i = 0; i < textToImage.width * textToImage.height; i++) {
-        Color color = imageColors[i];
-        Color newColor = color;
-
-        if (turretType == TURRET) {
-            newColor.r = (color.r >> 5);
-            newColor.g = (color.g << 5);
-            newColor.b = (color.b << 5);
-        }
-        else if (turretType == TURRETER) {
-            newColor.r = (color.r << 5);
-            newColor.g = (color.g >> 5);
-            newColor.b = (color.b << 5);
-        }
-        else if (turretType == TURRETIEST) {
-            newColor.r = (color.r >> 5);
-            newColor.g = (color.g << 1);
-            newColor.b = (color.b >> 3);
-        }
-        // Replace color only if it's not the same to avoid doing too much again lol
-        if (color.r != newColor.r || color.g != newColor.g || color.b != newColor.b) {
-            ImageColorReplace(&textToImage, color, newColor);
-        }
-    }
-
-    //should be able to make a new texture based off the shit
-
-    Texture2D newText = LoadTextureFromImage(textToImage);
-    //unload shit to free memory
-    UnloadImage(textToImage);
-    UnloadImageColors(imageColors);
-    //UnloadTexture(enemyText);
-    //return our texture
-    return newText;
-
-}
 
 struct Turret {
     int damage = 10;
     int cost = 10;
     float range = 250.0f;
     float rateOfFire = 0.6f;
-    TurretType type = TURRET;
+    TurretType type = BASIC;
     Vector2 location{};
     Enemy* target = nullptr;
     Texture2D turretTexture = tower1;
 
-    
-
-    //run a function that swaps it based on level?
-    Turret(TurretType turretType) :type(turretType) {
-        typeInit();
-    }
-
-    void typeInit() {
-        switch (type) {
-        case TURRET:
-            cost = 10;
-            damage = 10;
-            rateOfFire = 0.6f;
-            range = 250.0f;
-            turretTexture = ChangeTextureColor(type, tower1);
-            break;
-        case TURRETER:
-            cost = 15;
-            damage = 20;
-            rateOfFire = 0.5f;
-            range = 260.0f;
-            turretTexture = ChangeTextureColor(type, tower1);
-            break;
-        case TURRETIEST:
-            cost = 20;
-            damage = 30;
-            rateOfFire = 0.4f;
-            range = 275.0f;
-            turretTexture = ChangeTextureColor(type, tower1);
-            break;
-        default:
-            cost = 10;
-            damage = 10;
-            rateOfFire = 0.6f;
-            range = 250.0f;
-            turretTexture = ChangeTextureColor(type, tower1);
-            
-            break;
-        }
-
-    }
 };
 
 
@@ -452,8 +368,8 @@ void CallSpawnLogic(Vector2& enemyPosition, std::vector<Enemy>& enemies, LevelIn
 void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turrets) { //hehe
     for (int row = 0; row < TILE_COUNT; row++) {
         for (int col = 0; col < TILE_COUNT; col++) {
-            if (tiles[row][col] == TURRETS) {
-                Turret turret(TURRET);
+            if (tiles[row][col] == TURRET) {
+                Turret turret;
 
                 turret.location = TileCenter(row, col);
 
@@ -588,8 +504,8 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     BeginDrawing();
     ClearBackground(BLACK);
 
-
-    for (int row = 0; row < TILE_COUNT; row++) {
+    
+   for (int row = 0; row < TILE_COUNT; row++) {
         for (int col = 0; col < TILE_COUNT; col++) {
             DrawTile(row, col, tiles[row][col]);
         }
@@ -690,11 +606,11 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
         std::cout << "Tile X: " << tileX;
         std::cout << "Tile Y: " << tileY;
         if (tiles[tileY][tileX] == GRASS && playerInfo.coins >= turret.cost) {
-            tiles[tileY][tileX] = TURRETS;
+            tiles[tileY][tileX] = TURRET;
             playerInfo.coins -= turret.cost;
             ReDrawTurrets(tiles, turretArray);
         }
-        //else if (tiles[tileX][tileY] == TURRETS && playerInfo.coins > turret.cost)
+        //else if (tiles[tileX][tileY] == TURRET && playerInfo.coins > turret.cost)
 
     }
     if (IsKeyPressed(KEY_A)) {
@@ -772,17 +688,19 @@ int main()
     std::vector<Enemy> enemies;
     std::vector<Turret> turrets;
 
-    for (int row = 0; row < TILE_COUNT; row++) {
+
+    //ReDrawTurrets(tiles, turrets);
+   /* for (int row = 0; row < TILE_COUNT; row++) {
         for (int col = 0; col < TILE_COUNT; col++) {
-            if (tiles[row][col] == TURRETS) {
-                Turret turret(TURRET);
+            if (tiles[row][col] == TURRET) {
+                Turret turret;
 
                 turret.location = TileCenter(row, col);
 
                 turrets.push_back(turret);
             }
         }
-    }
+    }*/
 
    
     //init with 0 level for testing
@@ -796,7 +714,7 @@ int main()
 
     //Init PlayerInfo
     PlayerInfo playerInfo{};
-    Turret   turretCost(TURRET);
+    Turret   turretCost{};
 
 
     while (!WindowShouldClose())
