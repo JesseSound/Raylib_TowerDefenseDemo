@@ -76,7 +76,7 @@ enum Level : int {
 
 struct LevelInfo {
 
-    Level currentLevel = ONE;
+    Level currentLevel = ONE; //init to one for testing purposes
     int maxEnemyCount = (currentLevel +1) * 10; //fucking lol 
 };
 
@@ -334,7 +334,7 @@ void PreGame(GameState& gameState) {
 
 //Main game. Will take a lot of variables....
 //should auto advance through levels as well
-void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState, LevelInfo& levelInfo ) {
+void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState, LevelInfo& levelInfo,PlayerInfo& playerInfo ) {
     // TODO - Spawn 10 enemies
     float dt = GetFrameTime();
     spawnDelay += dt;
@@ -473,7 +473,13 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     for (const Bullet& bullet : bullets)
         DrawCircleV(bullet.position, bulletInfo.bulletRadius, BLUE);
 
-    DrawText(TextFormat("Total bullets: %i", bullets.size()), 10, 10, 20, BLUE);
+
+
+
+    //Keep Track of player coins
+    
+    DrawText(TextFormat("Player Coins: %i", playerInfo.coins), 10, 10, 20, BLUE);
+    DrawText(TextFormat("Player Health: %i", playerInfo.health), 10, 30, 20, RED);
 
     // Render enemies
     for (const Enemy& enemy : enemies) {
@@ -563,6 +569,11 @@ int main()
     bool canModify = false;
 
 
+    //Init PlayerInfo
+    PlayerInfo playerInfo{};
+
+
+
     while (!WindowShouldClose())
     {
        
@@ -575,7 +586,7 @@ int main()
                 break;
             case GAMELOOP:
                 canModify = true;
-                GameLoop(enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState, levelInfo );
+                GameLoop(enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState, levelInfo, playerInfo );
                 break;
             case END:
                 canModify = false;
