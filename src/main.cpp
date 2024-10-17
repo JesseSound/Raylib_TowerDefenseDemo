@@ -7,9 +7,9 @@
 #include <vector>
 #include <algorithm>
 #include <iostream>
-const float SCREEN_SIZE = 800;
-const int TILE_COUNT = 20;
-const float TILE_SIZE = SCREEN_SIZE / TILE_COUNT;
+constexpr float SCREEN_SIZE = 800;
+constexpr int TILE_COUNT = 20;
+constexpr float TILE_SIZE = SCREEN_SIZE / TILE_COUNT;
 
 //don't have to pass to function this way
 //Sound list
@@ -73,7 +73,8 @@ struct Cell
 
 //enum for what level we're in
 
-enum Level : int {
+enum Level  {
+    ZERO,
     ONE,
     TWO,
     THREE
@@ -586,32 +587,60 @@ void PostGame(PlayerInfo playerInfo) {
     EndDrawing();
 }
 
-void Setup(PlayerInfo& playerInfo, Turret turret)
+void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInfo& level)
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-
-    for (int row = 0; row < TILE_COUNT; row++) {
-        for (int col = 0; col < TILE_COUNT; col++) {
-            DrawTile(row, col, tiles[row][col]);
-        }
-    }
+    int levelInc = 0;
+   
 
     if (IsMouseButtonPressed(0)) {
         Vector2 pos = GetMousePosition();
        
       
-        int tileX = (int)(pos.x /= 40);
-        int tileY = (int)(pos.y /= 40);
-        if (tiles[tileX][tileY] == GRASS && playerInfo.coins > turret.cost) {
-            tiles[tileX][tileY] == TURRET;
-            
+        int tileX = (int)(pos.x/40);
+        int tileY = (int)(pos.y/40);
+
+        std::cout << "Tile X: " << tileX;
+        std::cout << "Tile Y: " << tileY;
+        if (tiles[tileY][tileX] == GRASS && playerInfo.coins > turret.cost) {
+            tiles[tileY][tileX] = TURRET;
+            playerInfo.coins -= turret.cost;
         }
         //else if (tiles[tileX][tileY] == TURRET && playerInfo.coins > turret.cost)
 
     }
-
-
+    if (IsKeyPressed(KEY_A)) {
+       
+        switch (levelInc) {
+            case 0:
+                level.currentLevel = ONE;
+                levelInc += 1;
+                gameState = GAMELOOP;
+                break;
+            case 1:
+                level.currentLevel = TWO;
+                levelInc += 1;
+                gameState = GAMELOOP;
+                break;
+            case 2:
+                level.currentLevel = THREE;
+                levelInc += 1;
+                gameState = GAMELOOP;
+                break;
+            case 3:
+                gameState = END;
+                break;
+            default:
+                gameState = PRE;
+                break;
+        }
+    }
+    for (int row = 0; row < TILE_COUNT; row++) {
+        for (int col = 0; col < TILE_COUNT; col++) {
+            DrawTile(row, col, tiles[row][col]);
+        }
+    }
     EndDrawing();
 }
 
@@ -671,17 +700,18 @@ int main()
     }
 
    
-    //init with first level for testing
+    //init with 0 level for testing
+    
     LevelInfo levelInfo{};
-    levelInfo.currentLevel = THREE;
+    levelInfo.currentLevel = ZERO;
     levelInfo.maxEnemyCount = (levelInfo.currentLevel + 1) * 10;
-
+    
 
 
 
     //Init PlayerInfo
     PlayerInfo playerInfo{};
-
+    Turret   turretCost{};
 
 
     while (!WindowShouldClose())
@@ -706,7 +736,7 @@ int main()
                 PostGame(playerInfo);
                 break;
             case SETUP:
-                Setup(playerInfo);
+                Setup(playerInfo, turretCost, gameState, levelInfo);
                 break;
 
             default:
