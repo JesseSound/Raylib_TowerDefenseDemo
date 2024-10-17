@@ -466,6 +466,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
                 enemy.health -= 10;
                 if (enemy.health <= 0) {
                     PlaySound(death);
+                    playerInfo.coins += enemy.pointValue;
                     enemy.alive = false;
                 }
                 else {
@@ -479,7 +480,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
         bullet.enabled = !expired && !collision;
     }
 
-    //Targeting system enemy removal handling???
+    //Targeting system enemy removal handling
     for (Turret& turret : turrets) {
         for (Enemy& enemy : enemies) {
             if (!enemy.alive) {
@@ -564,13 +565,24 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
         DrawTexture(tower1, turret.location.x -31, turret.location.y -30, WHITE);
     }
 
+
+    
+
+
+
+
     
     EndDrawing();
 }
 
 //After game is over. Maybe when All levels are done or player health <= 0 it goes back to Level select, or maybe it quickly goes to an info screen and gives option to choose new level.
-void PostGame() {
-
+void PostGame(PlayerInfo playerInfo) {
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
+    DrawText("Sorry You Died", 10, 10, 20, BLUE);
+    DrawText(TextFormat("Coins Gathered: %i", playerInfo.coins), 10, 50, 20, BLUE);
+   
+    EndDrawing();
 }
 
 
@@ -636,7 +648,6 @@ int main()
     levelInfo.currentLevel = THREE;
    
 
-    bool canModify = false;
 
 
     //Init PlayerInfo
@@ -647,19 +658,23 @@ int main()
     while (!WindowShouldClose())
     {
        
-       
+        //logic for switching to Postgame based on player health
+
+        if (playerInfo.health <= 0) {
+            gameState = END;
+        }
 
         switch (gameState) {
             case PRE:
-                canModify = false;
+                
                 PreGame(gameState);
                 break;
             case GAMELOOP:
-                canModify = true;
+                
                 GameLoop(enemyPosition, enemies, shootCurrent, turrets, shootTotal, bullets, bulletInfo,  waypoints, gameState, levelInfo, playerInfo );
                 break;
             case END:
-                canModify = false;
+                PostGame(playerInfo);
                 break;
             default:
                 gameState = PRE; // safety net
