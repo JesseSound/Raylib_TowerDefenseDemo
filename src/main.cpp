@@ -19,11 +19,13 @@ Sound shot{};
 
 //textures
 Texture tower1{};
+Texture gEnemyTexture1;
+Texture gEnemyTexture2;
+Texture gEnemyTexture3;
 Texture enemyTexture;
 
-
-
-
+// Ridiculous girl math
+int levelInc = 0;
 
 
 
@@ -251,7 +253,7 @@ struct Enemy {
     bool alive = true;
     EnemyType type{};
     Color color{};
-    Texture2D texture = enemyTexture;
+    Texture2D* texture = nullptr;
     //constructor to create unique enemies based on level
     Enemy(EnemyType enemyType) :type(enemyType) {
         typeInit();
@@ -262,26 +264,26 @@ struct Enemy {
             case ENEMY:
                 health = 30;
                 speed = 200.0f;
-                pointValue = 10;
+                pointValue = 5;
                 damage = 5;
                 color = RED;
-                texture = ChangeTextureColor(type, enemyTexture);
+                texture = &gEnemyTexture1;
                 break;
             case ENEMIER:
                 health = 50;
                 speed = 220.0f;
-                pointValue = 15;
+                pointValue = 10;
                 color = BLUE;
                 damage = 10;
-                texture = ChangeTextureColor(type, enemyTexture);
+                texture = &gEnemyTexture2;
                 break;
             case ENEMIEST:
                 health = 70;
                 speed = 250.0f;
-                pointValue = 30;
+                pointValue = 20;
                 color = PURPLE;
                 damage = 20;
-                texture = ChangeTextureColor(type, enemyTexture);
+                texture = &gEnemyTexture3;
                 break;
             default:
                 health = 30;
@@ -289,7 +291,7 @@ struct Enemy {
                 pointValue = 10;
                 color = PURPLE;
                 damage = 5;
-                texture = enemyTexture;
+                //texture = enemyTexture;
                 break;
         }
 
@@ -305,7 +307,8 @@ enum TurretType : int {
 
 struct Turret {
     int damage = 10;
-    int cost = 10;
+    int cost = 20;
+    int upGradeCost = 25;
     float range = 250.0f;
     float rateOfFire = 0.6f;
     TurretType type = BASIC;
@@ -317,7 +320,7 @@ struct Turret {
 
 
 struct PlayerInfo { // a bit useless to start but may have some use down the road
-    int coins = 50;
+    int coins = 100;
     int health = 50;
 };
 
@@ -557,7 +560,11 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
         if (enemy.alive) {
             //Texture2D newTexture = ChangeTextureColor(enemy, enemyTexture); **don't uncomment
             //DrawCircleV(enemy.position, enemy.radius, enemy.color);
-            DrawTextureV(enemy.texture, { enemy.position.x - 15, enemy.position.y - 15 }, WHITE);
+
+
+
+
+            DrawTextureV(*enemy.texture, { enemy.position.x - 15, enemy.position.y - 15 }, WHITE);
            
         }
     }
@@ -591,7 +598,7 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
 {
     BeginDrawing();
     ClearBackground(RAYWHITE);
-    int levelInc = 0;
+    
     //map draw
     for (int row = 0; row < TILE_COUNT; row++) {
         for (int col = 0; col < TILE_COUNT; col++) {
@@ -612,7 +619,9 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
             playerInfo.coins -= turret.cost;
             ReDrawTurrets(tiles, turretArray);
         }
-        //else if (tiles[tileX][tileY] == TURRET && playerInfo.coins > turret.cost)
+        else if (tiles[tileX][tileY] == TURRET && playerInfo.coins >= turret.upGradeCost) {
+
+        }
 
     }
     if (IsKeyPressed(KEY_A)) {
@@ -623,7 +632,6 @@ void Setup(PlayerInfo& playerInfo, Turret turret, GameState& gameState, LevelInf
                 levelInc += 1;
                 level.maxEnemyCount = 10;
                 gameState = GAMELOOP;
-                
                 break;
             case 1:
                 level.currentLevel = TWO;
@@ -669,6 +677,12 @@ int main()
     tower1 = LoadTexture("src/towerlvl1.png"); //https://opengameart.org/content/tower-defense
     enemyTexture = LoadTexture("src/enemyTexture.png"); //self made by Jesse
 
+    gEnemyTexture1 = ChangeTextureColor(ENEMY, enemyTexture);
+    gEnemyTexture2 = ChangeTextureColor(ENEMIER, enemyTexture);
+    gEnemyTexture3 = ChangeTextureColor(ENEMIEST, enemyTexture);
+       
+
+
     //set initial gamestate to pregame
     GameState gameState = PRE;
 
@@ -706,6 +720,9 @@ int main()
     //Init PlayerInfo
     PlayerInfo playerInfo{};
     Turret   turretCost{};
+
+     
+    
 
 
     while (!WindowShouldClose())
