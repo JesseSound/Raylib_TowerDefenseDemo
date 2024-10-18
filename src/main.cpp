@@ -263,7 +263,7 @@ struct Enemy {
         switch (type) {
             case ENEMY:
                 health = 50;
-                speed = 200.0f;
+                speed = 100.0f;
                 pointValue = 5;
                 damage = 5;
                 color = RED;
@@ -271,7 +271,7 @@ struct Enemy {
                 break;
             case ENEMIER:
                 health = 80;
-                speed = 220.0f;
+                speed = 120.0f;
                 pointValue = 10;
                 color = BLUE;
                 damage = 10;
@@ -279,7 +279,7 @@ struct Enemy {
                 break;
             case ENEMIEST:
                 health = 100;
-                speed = 250.0f;
+                speed = 150.0f;
                 pointValue = 20;
                 color = PURPLE;
                 damage = 20;
@@ -287,7 +287,7 @@ struct Enemy {
                 break;
             default:
                 health = 30;
-                speed = 200.0f;
+                speed = 100.0f;
                 pointValue = 10;
                 color = PURPLE;
                 damage = 5;
@@ -311,6 +311,8 @@ struct Turret {
     int upgradeCost = 25;
     float range = 250.0f;
     float rateOfFire = 0.6f;
+    float shootTimer = 0.6f;
+    
     TurretType type = BASIC;
     Vector2 location{};
     Enemy* target = nullptr;
@@ -416,18 +418,19 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     
     //clean this up
     shootCurrent += dt;
-    if (shootCurrent >= shootTotal) {  // Change to inside loop
-        for (Turret& turret : turrets) {
+      // Change to inside loop
+    for (Turret& turret : turrets) {
+        turret.shootTimer += dt;  // Update the turret's individual shoot timer
 
-            // Check if target is out of range
-            //absolute bullshit way of doing this
-            //please dont fail me for not using find_if
-            if (turret.target && Distance(turret.target->position, turret.location) > turret.range || enemies.size() <=0) {
+        // Check if the turret's shoot timer exceeds its rate of fire
+        if (turret.shootTimer >= turret.rateOfFire) {
+
+            // Check if target is out of range or no enemies exist
+            if (turret.target && (Distance(turret.target->position, turret.location) > turret.range || enemies.size() <= 0)) {
                 turret.target = nullptr;
-
             }
 
-            // If no target, find one
+            // If no target, find one within range
             if (!turret.target) {
                 for (Enemy& enemy : enemies) {
                     if (Distance(enemy.position, turret.location) <= turret.range) {
@@ -437,21 +440,17 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
                 }
             }
 
-            // Shoot at the current target
-            //still maintains part of your code, yeah?
+            // Shoot at the current target, if there's one
             if (turret.target) {
                 Bullet bullet;
                 bullet.position = turret.location;
-                bullet.direction = Normalize(turret.target->position - bullet.position);
+                bullet.direction = Normalize(turret.target->position + 30 - bullet.position);
                 bullets.push_back(bullet);
                 PlaySound(shot);
 
+                // Reset the turret's shooting timer after firing
+                turret.shootTimer = 0.0f;
             }
-
-            // Reset shooting timers
-            shootCurrent = 0.0f;
-            shootTotal = turret.rateOfFire;
-
         }
     }
 
@@ -622,12 +621,15 @@ void Setup(PlayerInfo& playerInfo,  GameState& gameState, LevelInfo& level, std:
             playerInfo.coins -= newTurret.cost;
             turretArray.push_back(newTurret);
             
-         } /*else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
+         } else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
              playerInfo.coins -= 25;
-         
-                 
+             for (int i = 0; i < turretArray.size(); i++) {
+                 if (Equals(turretArray[i].location, TileCenter(tileY, tileX))) {
+                     std::cout << "YES";
+                     turretArray[i].rateOfFire /= 2;
              }
-         }*/
+             }
+         }
         
     }
     if (IsMouseButtonPressed(1)) {
