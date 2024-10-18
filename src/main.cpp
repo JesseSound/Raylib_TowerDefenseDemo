@@ -318,7 +318,7 @@ struct Turret {
     Enemy* target = nullptr;
     Texture2D turretTexture = tower1;
     
-
+    Color turretBulletColor = BLUE;
 };
 
 
@@ -337,6 +337,7 @@ struct Bullet
      float bulletTime = 1.0f;
    float bulletSpeed = 500.0f;
      float bulletRadius = 15.0f;
+     Color bulletColor = BLUE;
 };
 
 void EnemySpawning(std::vector<Enemy>& enemies, Vector2& enemyPosition, LevelInfo& levelInfo) {
@@ -370,21 +371,6 @@ void CallSpawnLogic(Vector2& enemyPosition, std::vector<Enemy>& enemies, LevelIn
         EnemySpawning(enemies,  enemyPosition, levelInfo);
     }
 }
-// redundant
-//void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turrets) { //hehe
-//    for (int row = 0; row < TILE_COUNT; row++) {
-//        for (int col = 0; col < TILE_COUNT; col++) {
-//            if (tiles[row][col] == TURRET) {
-//               // Turret turret;
-//                for (Turret& turret : turrets) {
-//                    turret.location = TileCenter(row, col);
-//
-//                    turrets.push_back(turret);
-//                }
-//            }
-//        }
-//    }
-//}
 
 
 //bonus points for goto and inline assembly
@@ -445,6 +431,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
                 Bullet bullet;
                 bullet.position = turret.location;
                 bullet.direction = Normalize(turret.target->position + 30 - bullet.position);
+                bullet.bulletColor = turret.turretBulletColor;
                 bullets.push_back(bullet);
                 PlaySound(shot);
 
@@ -543,8 +530,9 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
         }), enemies.end());
 
     // Render bullets
-    for (const Bullet& bullet : bullets)
-        DrawCircleV(bullet.position, bulletInfo.bulletRadius, BLUE);
+    for (const Bullet& bullet : bullets) {
+        DrawCircleV(bullet.position, bulletInfo.bulletRadius, bullet.bulletColor);
+    }
 
 
 
@@ -622,11 +610,45 @@ void Setup(PlayerInfo& playerInfo,  GameState& gameState, LevelInfo& level, std:
             turretArray.push_back(newTurret);
             
          } else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
-             playerInfo.coins -= 25;
+             
              for (int i = 0; i < turretArray.size(); i++) {
                  if (Equals(turretArray[i].location, TileCenter(tileY, tileX))) {
-                     std::cout << "YES";
-                     turretArray[i].rateOfFire /= 2;
+
+                     switch (turretArray[i].type) {
+                     case BASIC:
+                         std::cout << "YES";
+                         turretArray[i].rateOfFire = 0.4f;
+                         turretArray[i].damage= 20;
+                         turretArray[i].cost = 20;
+                         turretArray[i].type = TURRETER;
+                         turretArray[i].turretBulletColor = DARKBLUE;
+                         playerInfo.coins -= 25;
+
+                         break;
+                     case TURRETER:
+                         std::cout << "TURRETTTERIEST";
+                         turretArray[i].rateOfFire = 0.2f;
+                         turretArray[i].cost = 30;
+                         turretArray[i].damage = 30;
+                         turretArray[i].type = TURRETIEST;
+                         turretArray[i].turretBulletColor = RED;
+                         playerInfo.coins -= 25;
+                         break;
+                     case TURRETIEST:
+                         std::cout << "CANT UPGRADE FURTHER";
+                         turretArray[i].rateOfFire = 0.2f;
+                         turretArray[i].cost = 40;
+                         turretArray[i].damage = 40;
+                         turretArray[i].turretBulletColor = DARKPURPLE;
+                         break;
+                     default:
+                         std::cout << "YES";
+                         turretArray[i].rateOfFire = 0.4f;
+                         turretArray[i].cost = 20;
+                         turretArray[i].type = TURRETER;
+                         playerInfo.coins -= 25;
+                         break;
+                     }
              }
              }
          }
