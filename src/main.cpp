@@ -319,6 +319,8 @@ struct Turret {
     Texture2D turretTexture = tower1;
     
     Color turretBulletColor = BLUE;
+
+    bool enabled = true; // remove_if to remove with right click
 };
 
 
@@ -667,7 +669,11 @@ void Setup(PlayerInfo& playerInfo,  GameState& gameState, LevelInfo& level, std:
         if (tiles[tileY][tileX] == TURRET) {
             tiles[tileY][tileX] = GRASS;
             playerInfo.coins += 5;
-            turretArray.pop_back();
+            for (int i = 0; i < turretArray.size(); i++) {
+                if (Equals(turretArray[i].location, TileCenter(tileY, tileX))) {
+                    turretArray[i].enabled = false;
+                }
+            }
         }
     }
     if (IsKeyPressed(KEY_A)) {
@@ -810,6 +816,14 @@ int main()
         if (IsKeyPressed(KEY_SPACE) && gameState == PRE) {
             gameState = SETUP;
         }
+
+        //removing turrets from array 
+         // Erase dead enemies
+        turrets.erase(std::remove_if(turrets.begin(), turrets.end(), [](Turret& turret) {
+            return !turret.enabled;
+            }), turrets.end());
+
+
     }
     // can store pointers to texture, 8 byte address per enemy
     UnloadTexture(enemyTexture);
