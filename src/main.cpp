@@ -315,6 +315,7 @@ struct Turret {
     Vector2 location{};
     Enemy* target = nullptr;
     Texture2D turretTexture = tower1;
+    
 
 };
 
@@ -367,20 +368,21 @@ void CallSpawnLogic(Vector2& enemyPosition, std::vector<Enemy>& enemies, LevelIn
         EnemySpawning(enemies,  enemyPosition, levelInfo);
     }
 }
-
-void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turrets) { //hehe
-    for (int row = 0; row < TILE_COUNT; row++) {
-        for (int col = 0; col < TILE_COUNT; col++) {
-            if (tiles[row][col] == TURRET) {
-                Turret turret;
-
-                turret.location = TileCenter(row, col);
-
-                turrets.push_back(turret);
-            }
-        }
-    }
-}
+// redundant
+//void ReDrawTurrets(int tiles[TILE_COUNT][TILE_COUNT], std::vector<Turret>& turrets) { //hehe
+//    for (int row = 0; row < TILE_COUNT; row++) {
+//        for (int col = 0; col < TILE_COUNT; col++) {
+//            if (tiles[row][col] == TURRET) {
+//               // Turret turret;
+//                for (Turret& turret : turrets) {
+//                    turret.location = TileCenter(row, col);
+//
+//                    turrets.push_back(turret);
+//                }
+//            }
+//        }
+//    }
+//}
 
 
 //bonus points for goto and inline assembly
@@ -400,13 +402,13 @@ void PreGame(GameState& gameState) {
 }
 
 
+
 //Main game. Will take a lot of variables....
 //should auto advance through levels as well
 void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shootCurrent, std::vector<Turret>& turrets, float& shootTotal, std::vector<Bullet>& bullets, Bullet& bulletInfo, std::vector<Cell>& waypoints, GameState& gameState, LevelInfo& levelInfo,PlayerInfo& playerInfo ) {
     // TODO - Spawn 10 enemies
     float dt = GetFrameTime();
     spawnDelay += dt;
-
     
     
     
@@ -561,9 +563,6 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
             //Texture2D newTexture = ChangeTextureColor(enemy, enemyTexture); **don't uncomment
             //DrawCircleV(enemy.position, enemy.radius, enemy.color);
 
-
-
-
             DrawTextureV(*enemy.texture, { enemy.position.x - 15, enemy.position.y - 15 }, WHITE);
            
         }
@@ -573,7 +572,7 @@ void GameLoop( Vector2& enemyPosition, std::vector<Enemy>& enemies, float& shoot
     for (const Turret& turret : turrets) {
         //if turret level = 0,1,2
         //Texture tower = 
-        DrawTexture(tower1, turret.location.x -31, turret.location.y -30, WHITE);
+        DrawTexture(turret.turretTexture, turret.location.x -31, turret.location.y -30, WHITE);
     }
 
 
@@ -594,8 +593,9 @@ void PostGame(PlayerInfo playerInfo) {
     EndDrawing();
 }
 
-void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelInfo& level, std::vector<Turret>& turretArray)
+void Setup(PlayerInfo& playerInfo,  GameState& gameState, LevelInfo& level, std::vector<Turret>& turretArray)
 {
+   
     BeginDrawing();
     ClearBackground(RAYWHITE);
     
@@ -607,7 +607,7 @@ void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelIn
     }
     if (IsMouseButtonPressed(0)) {
         Vector2 pos = GetMousePosition();
-       
+        Turret turret;
       
         int tileX = (int)(pos.x/40);
         int tileY = (int)(pos.y/40);
@@ -615,15 +615,19 @@ void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelIn
         std::cout << "Tile X: " << tileX;
         std::cout << "Tile Y: " << tileY;
        
-        if (tiles[tileY][tileX] == GRASS && playerInfo.coins >= turret.cost) {
+        if (tiles[tileY][tileX] == GRASS && playerInfo.coins >= 10) {
             tiles[tileY][tileX] = TURRET;
-            playerInfo.coins -= turret.cost;
-            ReDrawTurrets(tiles, turretArray);
-         } else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
-             turret.damage *= 2;
-             turret.turretTexture = gEnemyTexture1;
-             std::cout << "UPGRADE";
-         }
+           Turret newTurret;
+           newTurret.location = TileCenter(tileY, tileX);
+            playerInfo.coins -= newTurret.cost;
+            turretArray.push_back(newTurret);
+            
+         } /*else  if (tiles[tileY][tileX] == TURRET && playerInfo.coins >= turret.upgradeCost) {
+             playerInfo.coins -= 25;
+         
+                 
+             }
+         }*/
         
     }
     if (IsMouseButtonPressed(1)) {
@@ -638,8 +642,8 @@ void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelIn
 
         if (tiles[tileY][tileX] == TURRET) {
             tiles[tileY][tileX] = GRASS;
-            playerInfo.coins += turret.cost/2;
-            ReDrawTurrets(tiles, turretArray);
+            playerInfo.coins += 5;
+            turretArray.pop_back();
         }
     }
     if (IsKeyPressed(KEY_A)) {
@@ -673,7 +677,11 @@ void Setup(PlayerInfo& playerInfo, Turret& turret, GameState& gameState, LevelIn
                 break;
         }
     }
-    
+    for (const Turret& turret : turretArray) {
+        //if turret level = 0,1,2
+        //Texture tower = 
+        DrawTexture(turret.turretTexture, turret.location.x - 30 , turret.location.y - 30, WHITE);
+    }
     DrawText(TextFormat("Player Coins: %i", playerInfo.coins), 10, 50, 20, BLUE);
     DrawText(TextFormat("Player Health: %i", playerInfo.health), 10, 20, 20, RED);
     EndDrawing();
@@ -737,7 +745,7 @@ int main()
     
     //Init PlayerInfo
     PlayerInfo playerInfo{};
-    Turret   turretCost{};
+    //Turret   turretCost{};
 
      
     
@@ -745,7 +753,7 @@ int main()
 
     while (!WindowShouldClose())
     {
-       
+        std::cout << turrets.size();
         //logic for switching to Postgame based on player health
 
         if (playerInfo.health <= 0) {
@@ -765,7 +773,7 @@ int main()
                 PostGame(playerInfo);
                 break;
             case SETUP:
-                Setup(playerInfo, turretCost, gameState, levelInfo, turrets);
+                Setup(playerInfo, gameState, levelInfo, turrets);
                 break;
 
             default:
@@ -781,6 +789,9 @@ int main()
     }
     // can store pointers to texture, 8 byte address per enemy
     UnloadTexture(enemyTexture);
+    UnloadTexture(gEnemyTexture1);
+    UnloadTexture(gEnemyTexture2);
+    UnloadTexture(gEnemyTexture3);
     CloseAudioDevice();
     CloseWindow();
     return 0;
