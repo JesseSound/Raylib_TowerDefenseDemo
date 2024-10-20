@@ -22,6 +22,8 @@ Texture tower1{};
 Texture gEnemyTexture1;
 Texture gEnemyTexture2;
 Texture gEnemyTexture3;
+Texture gEnemyTexture4;
+Texture gEnemyTexture5;
 Texture enemyTexture;
 
 // Ridiculous girl math
@@ -79,7 +81,9 @@ enum Level  {
     ZERO,
     ONE,
     TWO,
-    THREE
+    THREE,
+    FOUR,
+    FIVE
 };
 //level information structure before i cry
 
@@ -190,7 +194,9 @@ std::vector<Cell> FloodFill(Cell start, int tiles[TILE_COUNT][TILE_COUNT], TileT
 enum EnemyType : int {
     ENEMY,
     ENEMIER,
-    ENEMIEST
+    ENEMIEST,
+    ENEMIESTER,
+    ENEMIESTIEST
 
 };
 
@@ -222,6 +228,16 @@ Texture2D ChangeTextureColor(EnemyType enemyType, Texture2D enemyText) {
             newColor.r = (color.r >> 5);
             newColor.g = (color.g << 1);
             newColor.b = (color.b >> 3);
+        }
+        else if (enemyType == ENEMIESTER) {
+            newColor.r = (color.r >> 3);
+            newColor.g = (color.g >> 1);
+            newColor.b = (color.b >> 1);
+        }
+        else if (enemyType == ENEMIESTIEST) {
+            newColor.r = (color.r << 1);
+            newColor.g = (color.g << 1);
+            newColor.b = (color.b >> 2);
         }
         // Replace color only if it's not the same to avoid doing too much again lol
         if (color.r != newColor.r || color.g != newColor.g || color.b != newColor.b) {
@@ -285,6 +301,22 @@ struct Enemy {
                 damage = 20;
                 texture = &gEnemyTexture3;
                 break;
+            case ENEMIESTER:
+                health = 110;
+                speed = 170.0f;
+                pointValue = 30;
+                color = PURPLE;
+                damage = 30;
+                texture = &gEnemyTexture4;
+                break;
+            case ENEMIESTIEST:
+                health = 200;
+                speed = 80.0f;
+                pointValue = 40;
+                color = PURPLE;
+                damage = 50;
+                texture = &gEnemyTexture5;
+                break;
             default:
                 health = 30;
                 speed = 100.0f;
@@ -337,7 +369,7 @@ struct Bullet
     float time = 0.0f;
     bool enabled = true;
      float bulletTime = 1.0f;
-   float bulletSpeed = 500.0f;
+   float bulletSpeed = 700.0f;
      float bulletRadius = 15.0f;
      Color bulletColor = BLUE;
 };
@@ -700,6 +732,18 @@ void Setup(PlayerInfo& playerInfo,  GameState& gameState, LevelInfo& level, std:
 
                 break;
             case 3:
+                level.currentLevel = FOUR;
+                levelInc += 1;
+                level.maxEnemyCount = 40;
+                gameState = GAMELOOP;
+                break;
+            case 4:
+                level.currentLevel = FIVE;
+                levelInc += 1;
+                level.maxEnemyCount = 50;
+                gameState = GAMELOOP;
+                break;
+            case 5:
                 gameState = END;
                 break;
             default:
@@ -736,6 +780,8 @@ int main()
     gEnemyTexture1 = ChangeTextureColor(ENEMY, enemyTexture);
     gEnemyTexture2 = ChangeTextureColor(ENEMIER, enemyTexture);
     gEnemyTexture3 = ChangeTextureColor(ENEMIEST, enemyTexture);
+    gEnemyTexture3 = ChangeTextureColor(ENEMIESTER, enemyTexture);
+    gEnemyTexture3 = ChangeTextureColor(ENEMIESTIEST, enemyTexture);
        
 
 
@@ -830,6 +876,8 @@ int main()
     UnloadTexture(gEnemyTexture1);
     UnloadTexture(gEnemyTexture2);
     UnloadTexture(gEnemyTexture3);
+    UnloadTexture(gEnemyTexture4);
+    UnloadTexture(gEnemyTexture5);
     CloseAudioDevice();
     CloseWindow();
     return 0;
