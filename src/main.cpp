@@ -384,7 +384,7 @@ void PreGame(GameState& gameState) {
 
     BeginDrawing();
     ClearBackground(LIGHTGRAY);
-    DrawText("Hi Josh! Welcome to our game.", 0, 0,50, RED);
+    DrawText("Hi Connor! Welcome to our game.", 0, 0,50, RED);
     DrawText("Hit Space to start lol", 0, 100,50, RED);
     EndDrawing();
 
